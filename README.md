@@ -14,12 +14,14 @@
 - **動的プロンプト生成**: Google Gemini 2.5 Flash を使用し、感情の組み合わせから最適な3D生成用プロンプトを作成。
 - **Text-to-3D 生成**: Tripo API を使用し、プロンプトから高速に3Dモデルを生成。
 - **自動ダウンロード**: 生成されたモデル（.glb形式）を自動でローカルフォルダに保存。
+- **自動リサイズ**:　glbファイルをテンプレートblenderファイルでインポートし、特定の大きさにリサイズ。
 
 ## 📦 必要要件
 
 - Python 3.8 以上
 - Google Cloud (Gemini) API Key
 - Tripo AI API Key
+- Blender 4.0 以上
 
 ## 🛠 インストールとセットアップ
 
@@ -50,12 +52,16 @@ python src/main.py
 ### フォルダ構成
 ```text
 Emotional-Monster-Maker/
-├── exported_models/      # 生成された3Dモデルの保存先
-├── src/                  # ソースコード
-│   ├── __init__.py
-│   ├── main.py           # メイン実行ファイル
-│   └── prompt.py         # プロンプト設定
-├── config.py             # 設定ファイル (Git対象外)
-├── requirements.txt      # 必要なライブラリ一覧
-└── README.md             # 説明書
+├── exported_models/       # 生成されたモデルと、処理済み.blendの保存先
+├── src/                   # ソースコード
+│   ├── __init__.py         
+│   ├── blender_process.py # Blender内部でのワークフロー制御
+│   ├── blender_resize.py  # 頂点データを直接操作するリサイズ処理（※名前を統一）
+│   ├── execute.py         # Blenderのバックグラウンド起動を管理
+│   ├── main.py            # ユーザー入力を受け取るメイン実行ファイル
+│   └── prompt.py          # Gemini用のプロンプト定義
+├── config.py              # 設定ファイル (Git対象外)
+├── Emotional-Monster-Maker_template.blend # 処理のベースとなるテンプレートファイル
+├── requirements.txt       # 必要なライブラリ一覧
+└── README.md              # 説明書
 ```
