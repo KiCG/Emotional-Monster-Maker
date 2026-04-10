@@ -49,6 +49,19 @@ TRIPO_API_KEY = "ここにTripoのAPIキー"
 python src/main.py
 ```
 
+### iPadからパラメータ入力する（Web UI）
+MacBook側でWebサーバーを起動し、iPadのブラウザからアクセスできます。
+
+1. MacBookでサーバー起動
+```bash
+python src/web_app.py
+```
+2. MacBookとiPadを同じWi-Fiに接続
+3. iPadのSafariで `http://<MacBookのIPアドレス>:8000` にアクセス
+4. スライダーで感情値を設定して「生成を開始」を押す
+
+> 例: `http://192.168.1.15:8000`
+
 ### フォルダ構成
 ```text
 Emotional-Monster-Maker/

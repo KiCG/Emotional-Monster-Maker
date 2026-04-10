@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emotional Monster Maker</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <main class="page">
+    <section class="panel">
+      <header class="panel-header">
+        <div class="title-row">
+          <h1>Emotional Monster Maker</h1>
+          <button id="themeToggle" class="theme-toggle" type="button" aria-label="テーマ切り替え">
+            ダークモード
+          </button>
+        </div>
+        <p>iPadから感情パラメータを送信して、MacBook側で3D生成を実行します。</p>
+      </header>
+
+      <form id="emotionForm" class="slider-grid" onsubmit="return false;">
+        <label class="slider-row" for="joy">
+          <span class="name">Joy (喜び)</span>
+          <span class="value-pill" id="joy_v">3.00</span>
+          <input id="joy" type="range" min="1" max="5" step="0.01" value="3.00" data-key="joy">
+        </label>
+
+        <label class="slider-row" for="calm">
+          <span class="name">Calm (穏やか)</span>
+          <span class="value-pill" id="calm_v">3.00</span>
+          <input id="calm" type="range" min="1" max="5" step="0.01" value="3.00" data-key="calm">
+        </label>
+
+        <label class="slider-row" for="anger">
+          <span class="name">Anger (怒り)</span>
+          <span class="value-pill" id="anger_v">3.00</span>
+          <input id="anger" type="range" min="1" max="5" step="0.01" value="3.00" data-key="anger">
+        </label>
+
+        <label class="slider-row" for="sadness">
+          <span class="name">Sadness (悲しみ)</span>
+          <span class="value-pill" id="sadness_v">3.00</span>
+          <input id="sadness" type="range" min="1" max="5" step="0.01" value="3.00" data-key="sadness">
+        </label>
+
+        <label class="slider-row" for="fear">
+          <span class="name">Fear (恐怖)</span>
+          <span class="value-pill" id="fear_v">3.00</span>
+          <input id="fear" type="range" min="1" max="5" step="0.01" value="3.00" data-key="fear">
+        </label>
+      </form>
+
+      <div class="button-row">
+        <button id="testButton" class="secondary" type="button">接続テスト（生成なし）</button>
+        <button id="runButton" type="button">生成を開始</button>
+      </div>
+
+      <section class="result-box">
+        <h2>結果</h2>
+        <pre id="result">待機中...</pre>
+      </section>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

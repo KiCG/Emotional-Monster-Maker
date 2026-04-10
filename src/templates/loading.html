@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>モンスター孵化準備中</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <main class="page">
+    <section class="panel loading-panel">
+      <div class="spinner" aria-hidden="true"></div>
+      <h1>モンスター孵化準備中・・・</h1>
+      <p class="loading-note">生成には数分かかる場合があります。ページを閉じずにお待ちください。</p>
+      <pre id="result">処理を開始します...</pre>
+      <div class="button-row">
+        <button id="backButton" class="secondary" type="button">入力画面に戻る</button>
+      </div>
+    </section>
+  </main>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -3,6 +3,7 @@ import os
 import subprocess
 import requests
 import time
+from typing import Dict, Tuple
 
 # ---------------------------------------------------------
 # パスの自動計算と設定
@@ -18,7 +19,10 @@ sys.path.append(PROJECT_ROOT)
 
 from google import genai
 import config 
-import prompt
+try:
+    import prompt
+except ModuleNotFoundError:
+    from src import prompt
 
 # --- API設定 ---
 GEMINI_API_KEY = config.GEMINI_API_KEY
@@ -36,7 +40,41 @@ EXPORT_DIR = os.path.join(PROJECT_ROOT, "exported_models")
 # APIのセットアップ
 client = genai.Client(api_key=GEMINI_API_KEY)
 
+def validate_emotion_values(joy, calm, anger, sadness, fear) -> Tuple[bool, Dict[str, float], str]:
+    values = {
+        "joy": joy,
+        "calm": calm,
+        "anger": anger,
+        "sadness": sadness,
+        "fear": fear,
+    }
+    normalized = {}
+    for key, value in values.items():
+        try:
+            number = round(float(value), 2)
+        except (TypeError, ValueError):
+            return False, {}, f"{key} は 1〜5 の数値で指定してください。"
+        if number < 1 or number > 5:
+            return False, {}, f"{key} は 1〜5 の範囲で指定してください。"
+        normalized[key] = number
+    return True, normalized, ""
+
+
+def emotion_to_filename_part(value: float) -> str:
+    return f"{value:.2f}".replace(".", "p")
+
+
 def generate_monster(joy, calm, anger, sadness, fear):
+    ok, normalized, error = validate_emotion_values(joy, calm, anger, sadness, fear)
+    if not ok:
+        return {"success": False, "error": error}
+
+    joy = normalized["joy"]
+    calm = normalized["calm"]
+    anger = normalized["anger"]
+    sadness = normalized["sadness"]
+    fear = normalized["fear"]
+
     # 1. Geminiでプロンプトを生成
     formatted_prompt = prompt.base_prompt.format(
         joy=joy, calm=calm, anger=anger, sadness=sadness, fear=fear
@@ -53,7 +91,7 @@ def generate_monster(joy, calm, anger, sadness, fear):
         print(f"📝 生成されたプロンプト:\n>> {tripo_prompt}\n")
     except Exception as e:
         print(f"❌ Geminiエラー: {e}")
-        return
+        return {"success": False, "error": f"Geminiエラー: {e}"}
 
     # 2. Tripo APIへタスク送信
     headers = {
@@ -75,18 +113,18 @@ def generate_monster(joy, calm, anger, sadness, fear):
         if req.status_code != 200:
             print(f"\n❌ Tripoからのエラー返答 ({req.status_code}):")
             print(req.text)
-            return
+            return {"success": False, "error": f"Tripoエラー ({req.status_code})"}
             
         req.raise_for_status() 
         task_id = req.json().get("data", {}).get("task_id")
         
     except Exception as e:
         print(f"❌ 通信エラー: {e}")
-        return
+        return {"success": False, "error": f"通信エラー: {e}"}
 
     if not task_id:
         print("Tripoタスクの作成に失敗しました。")
-        return
+        return {"success": False, "error": "Tripoタスクの作成に失敗しました。"}
 
     # 3. 生成完了のポーリング
     print(f"Tripoで3D生成中... (Task ID: {task_id})")
@@ -101,7 +139,13 @@ def generate_monster(joy, calm, anger, sadness, fear):
                 result_url = output.get("model") or output.get("pbr_model")
                 
                 # パスとファイル名の生成
-                filename_base = f"monster_J{joy}_C{calm}_A{anger}_S{sadness}_Fe{fear}"
+                filename_base = (
+                    f"monster_J{emotion_to_filename_part(joy)}"
+                    f"_C{emotion_to_filename_part(calm)}"
+                    f"_A{emotion_to_filename_part(anger)}"
+                    f"_S{emotion_to_filename_part(sadness)}"
+                    f"_Fe{emotion_to_filename_part(fear)}"
+                )
                 glb_filename = f"{filename_base}.glb"
                 blend_filename = f"{filename_base}.blend"
                 
@@ -127,16 +171,22 @@ def generate_monster(joy, calm, anger, sadness, fear):
                     subprocess.run(cmd, check=True)
                     print(f"\n✨ すべてのパイプライン処理が完了しました！")
                     print(f"📂 出力されたBlenderファイル: {new_blend_path}")
+                    return {
+                        "success": True,
+                        "glb_path": saved_filepath,
+                        "blend_path": new_blend_path,
+                        "task_id": task_id,
+                    }
                 except subprocess.CalledProcessError as e:
                     print(f"\n❌ Blender処理中にエラーが発生しました: {e}")
+                    return {"success": False, "error": f"Blender処理エラー: {e}"}
                 except FileNotFoundError:
                     print(f"\n❌ 実行ファイルが見つかりません。パスを確認してください: {EXECUTE_PY_PATH}")
-                
-                break
+                    return {"success": False, "error": f"実行ファイルが見つかりません: {EXECUTE_PY_PATH}"}
             
             elif status == "failed":
                 print("生成に失敗しました。")
-                break
+                return {"success": False, "error": "Tripoでのモデル生成に失敗しました。"}
             
             elif status in ["running", "queued"]:
                 print(".", end="", flush=True)
@@ -147,7 +197,9 @@ def generate_monster(joy, calm, anger, sadness, fear):
                 
         except Exception as e:
             print(f"ポーリングエラー: {e}")
-            break
+            return {"success": False, "error": f"ポーリングエラー: {e}"}
+
+    return {"success": False, "error": "不明な理由で処理が中断されました。"}
 
 def download_and_save(url, filename):
     # 保存先ディレクトリが存在しない場合は作成
@@ -162,19 +214,25 @@ def download_and_save(url, filename):
     
     return filepath
 
-# --- 実行 ---
-if __name__ == "__main__":
+def run_cli():
     print("=== Emotional Monster Maker Generator ===")
     print("各感情を 1〜5 の数値で入力してください")
     
     try:
-        j = input("Joy (喜び): ") or "1"
-        c = input("Calm (穏やか): ") or "1"
-        a = input("Anger (怒り): ") or "1"
-        s = input("Sadness (悲しみ): ") or "1"
-        fe = input("Fear (恐怖): ") or "1"
+        j = input("Joy (喜び): ").strip() or "1"
+        c = input("Calm (穏やか): ").strip() or "1"
+        a = input("Anger (怒り): ").strip() or "1"
+        s = input("Sadness (悲しみ): ").strip() or "1"
+        fe = input("Fear (恐怖): ").strip() or "1"
         
-        generate_monster(j, c, a, s, fe)
+        result = generate_monster(j, c, a, s, fe)
+        if not result.get("success"):
+            print(f"❌ エラー: {result.get('error', '不明なエラー')}")
         
     except KeyboardInterrupt:
         print("\n中止しました。")
+
+
+# --- 実行 ---
+if __name__ == "__main__":
+    run_cli()
