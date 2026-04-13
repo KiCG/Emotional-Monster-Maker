@@ -10,8 +10,13 @@
   <main class="page">
     <section class="panel loading-panel">
       <div class="spinner" aria-hidden="true"></div>
-      <h1>モンスター孵化準備中・・・</h1>
-      <p class="loading-note">生成には数分かかる場合があります。ページを閉じずにお待ちください。</p>
+      <h1 id="loadingTitle">モンスター孵化準備中・・・</h1>
+      <p id="loadingNote" class="loading-note">生成には数分かかる場合があります。ページを閉じずにお待ちください。</p>
+      <div class="loading-video-wrap">
+        <video id="loadingVideo" class="loading-video" autoplay loop muted playsinline webkit-playsinline preload="auto" src="{{ url_for('static', filename='media/loading-loop.webm') }}">
+          ご利用のブラウザは動画再生に対応していません。
+        </video>
+      </div>
       <pre id="result">処理を開始します...</pre>
       <div class="button-row">
         <button id="backButton" class="secondary" type="button">入力画面に戻る</button>

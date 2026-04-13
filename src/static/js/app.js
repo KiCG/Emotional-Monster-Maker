@@ -15,10 +15,20 @@ function setResult(text) {
   }
 }
 
+function appendLog(message) {
+  const result = document.getElementById("result");
+  if (!result) return;
+  const now = new Date().toLocaleTimeString();
+  const prefix = result.textContent && !result.textContent.endsWith("\n") ? "\n" : "";
+  result.textContent += `${prefix}[${now}] ${message}`;
+}
+
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   const toggle = document.getElementById("themeToggle");
-  toggle.textContent = theme === "dark" ? "ライトモード" : "ダークモード";
+  if (toggle) {
+    toggle.textContent = theme === "dark" ? "ライトモード" : "ダークモード";
+  }
 }
 
 function initTheme() {
@@ -56,6 +66,13 @@ function bindSliderDisplay() {
 }
 
 async function submitForm() {
+  sessionStorage.setItem("emm_generate_mode", "generate");
+  sessionStorage.setItem("emm_generate_payload", JSON.stringify(getPayload()));
+  window.location.href = "/loading";
+}
+
+function startLoadingTest() {
+  sessionStorage.setItem("emm_generate_mode", "test");
   sessionStorage.setItem("emm_generate_payload", JSON.stringify(getPayload()));
   window.location.href = "/loading";
 }
@@ -81,9 +98,12 @@ async function testInput() {
 }
 
 async function runGenerateFromSession() {
+  appendLog("runGenerateFromSession 開始");
   const raw = sessionStorage.getItem("emm_generate_payload");
+  const mode = sessionStorage.getItem("emm_generate_mode") || "generate";
   if (!raw) {
     setResult("入力値が見つかりません。入力画面に戻って再実行してください。");
+    appendLog("payload が sessionStorage に存在しません");
     return;
   }
 
@@ -92,36 +112,62 @@ async function runGenerateFromSession() {
     payload = JSON.parse(raw);
   } catch (error) {
     setResult(`入力値の読み込みに失敗しました\n${error}`);
+    appendLog(`JSON.parse 失敗: ${error}`);
     return;
   }
 
+  const loadingTitle = document.getElementById("loadingTitle");
+  const loadingNote = document.getElementById("loadingNote");
+  if (mode === "test") {
+    if (loadingTitle) {
+      loadingTitle.textContent = "モンスター孵化準備テスト中・・・";
+    }
+    if (loadingNote) {
+      loadingNote.textContent = "3Dモデル生成は行わず、入力受信のみテストします。";
+    }
+  }
+
+  const endpoint = mode === "test" ? "/test-input" : "/generate";
   try {
-    const res = await fetch("/generate", {
+    appendLog(`エンドポイント ${endpoint} へリクエスト送信`);
+    const res = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+    appendLog(`レスポンス受信 status=${res.status}`);
     const data = await res.json();
     if (data.success) {
-      setResult(`生成成功\nGLB: ${data.glb_path}\nBLEND: ${data.blend_path}`);
+      if (mode === "test") {
+        appendLog("接続テスト成功");
+        appendLog(JSON.stringify(data, null, 2));
+      } else {
+        appendLog("生成成功");
+        appendLog(`GLB: ${data.glb_path}`);
+        appendLog(`BLEND: ${data.blend_path}`);
+      }
     } else {
-      setResult(`生成失敗\n${data.error || "不明なエラー"}`);
+      appendLog(`生成失敗: ${data.error || "不明なエラー"}`);
     }
   } catch (error) {
-    setResult(`通信エラー\n${error}`);
+    appendLog(`通信エラー: ${error}`);
   } finally {
     sessionStorage.removeItem("emm_generate_payload");
+    sessionStorage.removeItem("emm_generate_mode");
+    appendLog("runGenerateFromSession 終了");
   }
 }
 
 function initIndexPage() {
   const runButton = document.getElementById("runButton");
   const testButton = document.getElementById("testButton");
-  if (!runButton || !testButton) {
+  const loadingTestButton = document.getElementById("loadingTestButton");
+  if (!runButton || !testButton || !loadingTestButton) {
     return;
   }
   runButton.addEventListener("click", submitForm);
   testButton.addEventListener("click", testInput);
+  loadingTestButton.addEventListener("click", startLoadingTest);
   bindSliderDisplay();
 }
 
@@ -129,6 +175,43 @@ function initLoadingPage() {
   const backButton = document.getElementById("backButton");
   if (!backButton) {
     return;
+  }
+  const video = document.getElementById("loadingVideo");
+  appendLog("loading ページ初期化");
+  if (video) {
+    appendLog(`canPlayType(video/webm)=${video.canPlayType("video/webm")}`);
+    appendLog(`video source=${video.currentSrc || video.getAttribute("src") || "not selected yet"}`);
+    video.addEventListener("loadedmetadata", () => {
+      appendLog(`video loadedmetadata ${video.videoWidth}x${video.videoHeight}`);
+    });
+    video.addEventListener("loadstart", () => {
+      appendLog("video loadstart");
+    });
+    video.addEventListener("loadeddata", () => {
+      appendLog("video loadeddata");
+    });
+    video.addEventListener("canplay", () => {
+      appendLog("video canplay");
+    });
+    video.addEventListener("playing", () => {
+      appendLog("video playing");
+    });
+    video.addEventListener("error", () => {
+      const code = video.error ? video.error.code : "unknown";
+      appendLog(`video error code=${code}`);
+    });
+    video.load();
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.then === "function") {
+      playPromise
+        .then(() => appendLog("video.play() resolved"))
+        .catch((error) => appendLog(`video.play() rejected: ${error}`));
+    }
+    setTimeout(() => {
+      appendLog(`video readyState=${video.readyState} networkState=${video.networkState}`);
+    }, 1000);
+  } else {
+    appendLog("video 要素が見つかりません");
   }
   backButton.addEventListener("click", () => {
     window.location.href = "/";

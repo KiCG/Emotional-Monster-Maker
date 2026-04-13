@@ -207,6 +207,21 @@ button:disabled {
   color: var(--muted);
 }
 
+.loading-video-wrap {
+  width: min(420px, 100%);
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.loading-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: transparent;
+}
+
 .spinner {
   width: 46px;
   height: 46px;
@@ -245,6 +260,6 @@ pre {
 
 @media (min-width: 760px) {
   .button-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   }
 }
