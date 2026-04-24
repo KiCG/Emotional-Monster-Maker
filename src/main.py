@@ -82,16 +82,27 @@ def generate_monster(joy, calm, anger, sadness, fear):
     
     print(f"--- Geminiに感情パラメータを送信中... ---")
     
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=formatted_prompt
-        )
-        tripo_prompt = response.text.strip()
-        print(f"📝 生成されたプロンプト:\n>> {tripo_prompt}\n")
-    except Exception as e:
-        print(f"❌ Geminiエラー: {e}")
-        return {"success": False, "error": f"Geminiエラー: {e}"}
+    max_retries = 3
+    retry_delay = 2  # 初回リトライ時の待機秒数
+    tripo_prompt = None
+
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents=formatted_prompt
+            )
+            tripo_prompt = response.text.strip()
+            print(f"📝 生成されたプロンプト:\n>> {tripo_prompt}\n")
+            break  # 成功したらループを抜ける
+        except Exception as e:
+            if attempt < max_retries:
+                print(f"⚠️ Geminiエラーが発生しました（{e}）。{retry_delay}秒後にリトライします... ({attempt + 1}/{max_retries})")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # 次回リトライ時は待機時間を2倍にする（指数的バックオフ）
+            else:
+                print(f"❌ Geminiエラー: {e}")
+                return {"success": False, "error": f"Geminiエラー: {e}"}
 
     # 2. Tripo APIへタスク送信
     headers = {
@@ -146,15 +157,17 @@ def generate_monster(joy, calm, anger, sadness, fear):
                     f"_S{emotion_to_filename_part(sadness)}"
                     f"_Fe{emotion_to_filename_part(fear)}"
                 )
+                target_dir = os.path.join(EXPORT_DIR, filename_base)
                 glb_filename = f"{filename_base}.glb"
                 blend_filename = f"{filename_base}.blend"
                 
                 print("生成成功！ファイルをダウンロードします...")
-                # GLBファイルの保存 (絶対パスが返ってくる)
-                saved_filepath = download_and_save(result_url, glb_filename)
+                # GLBファイルの保存
+                saved_filepath = os.path.join(target_dir, glb_filename)
+                download_and_save(result_url, saved_filepath)
                 
                 # 複製後のBlenderファイルの保存先を決定 (絶対パス)
-                new_blend_path = os.path.join(EXPORT_DIR, blend_filename)
+                new_blend_path = os.path.join(target_dir, blend_filename)
                 
                 # ==========================================
                 # execute.py の呼び出し
@@ -169,6 +182,22 @@ def generate_monster(joy, calm, anger, sadness, fear):
                         BLENDER_SCRIPT_PATH   # 絶対パス
                     ]
                     subprocess.run(cmd, check=True)
+                    # ==========================================
+                    # 3Dプリントの自動実行 (スライス & OctoPrint送信)
+                    # ==========================================
+                    print("\n🖨️ 3Dプリントの自動処理を開始します...")
+                    try:
+                        from src.print_manager import slice_stl, upload_to_octoprint
+                        stl_path = os.path.splitext(saved_filepath)[0] + ".stl"
+                        gcode_path = slice_stl(stl_path)
+                        if gcode_path:
+                            # 実際にOctoPrintが稼働していればここで印刷が開始されます
+                            upload_to_octoprint(gcode_path, auto_print=True)
+                        else:
+                            print("⚠️ スライスに失敗したため、印刷はスキップされました。")
+                    except Exception as e:
+                        print(f"❌ 3Dプリント処理中にエラーが発生しました: {e}")
+
                     print(f"\n✨ すべてのパイプライン処理が完了しました！")
                     print(f"📂 出力されたBlenderファイル: {new_blend_path}")
                     return {
@@ -201,12 +230,12 @@ def generate_monster(joy, calm, anger, sadness, fear):
 
     return {"success": False, "error": "不明な理由で処理が中断されました。"}
 
-def download_and_save(url, filename):
+def download_and_save(url, filepath):
     # 保存先ディレクトリが存在しない場合は作成
-    if not os.path.exists(EXPORT_DIR):
-        os.makedirs(EXPORT_DIR)
+    target_dir = os.path.dirname(filepath)
+    if not os.path.exists(target_dir):
+        os.makedirs(target_dir, exist_ok=True)
     
-    filepath = os.path.join(EXPORT_DIR, filename)
     response = requests.get(url)
     with open(filepath, "wb") as f:
         f.write(response.content)

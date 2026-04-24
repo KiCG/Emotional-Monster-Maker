@@ -69,10 +69,13 @@ Emotional-Monster-Maker/
 ├── src/                   # ソースコード
 │   ├── __init__.py         
 │   ├── blender_process.py # Blender内部でのワークフロー制御
-│   ├── blender_resize.py  # 頂点データを直接操作するリサイズ処理（※名前を統一）
+│   ├── blender_resize.py  # 頂点データを直接操作するリサイズ処理
 │   ├── execute.py         # Blenderのバックグラウンド起動を管理
 │   ├── main.py            # ユーザー入力を受け取るメイン実行ファイル
-│   └── prompt.py          # Gemini用のプロンプト定義
+│   ├── prompt.py          # Gemini用のプロンプト定義
+│   ├── web_app.py         # WebUI（Flask）用アプリケーション
+│   ├── static/            # WebUI用静的ファイル
+│   └── templates/         # WebUI用HTMLテンプレート
 ├── config.py              # 設定ファイル (Git対象外)
 ├── Emotional-Monster-Maker_template.blend # 処理のベースとなるテンプレートファイル
 ├── requirements.txt       # 必要なライブラリ一覧

@@ -141,10 +141,15 @@ async function runGenerateFromSession() {
       if (mode === "test") {
         appendLog("接続テスト成功");
         appendLog(JSON.stringify(data, null, 2));
+        appendLog("2秒後に結果画面へ遷移します（テスト用）...");
+        setTimeout(() => {
+          window.location.href = "/result";
+        }, 2000);
       } else {
         appendLog("生成成功");
         appendLog(`GLB: ${data.glb_path}`);
         appendLog(`BLEND: ${data.blend_path}`);
+        window.location.href = "/result";
       }
     } else {
       appendLog(`生成失敗: ${data.error || "不明なエラー"}`);
@@ -179,7 +184,7 @@ function initLoadingPage() {
   const video = document.getElementById("loadingVideo");
   appendLog("loading ページ初期化");
   if (video) {
-    appendLog(`canPlayType(video/webm)=${video.canPlayType("video/webm")}`);
+    appendLog(`canPlayType(video/mp4)=${video.canPlayType("video/mp4")}`);
     appendLog(`video source=${video.currentSrc || video.getAttribute("src") || "not selected yet"}`);
     video.addEventListener("loadedmetadata", () => {
       appendLog(`video loadedmetadata ${video.videoWidth}x${video.videoHeight}`);

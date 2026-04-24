@@ -7,6 +7,13 @@ except ModuleNotFoundError:
 
 app = Flask(__name__)
 
+# @app.route("/")
+# def hello_world():
+#     return "<p>Hello, World!</p>"
+
+# def main():
+#     app.run()
+
 @app.get("/")
 def index():
     return render_template("index.html")
@@ -15,6 +22,11 @@ def index():
 @app.get("/loading")
 def loading():
     return render_template("loading.html")
+
+
+@app.get("/result")
+def result():
+    return render_template("result.html")
 
 
 @app.post("/generate")
@@ -53,3 +65,4 @@ def test_input():
 if __name__ == "__main__":
     # iPadなど別端末からアクセスできるよう 0.0.0.0 で待ち受け
     app.run(host="0.0.0.0", port=8000)
+    # main()
