@@ -1,5 +1,5 @@
 config.py
 __pycache__/
-exported_models/
-*.blend1
+exported_models/*
+*blend1
 .DS_Store
