@@ -149,6 +149,9 @@ async function runGenerateFromSession() {
         appendLog("生成成功");
         appendLog(`GLB: ${data.glb_path}`);
         appendLog(`BLEND: ${data.blend_path}`);
+        if (data.print_time) {
+          sessionStorage.setItem("emm_print_time", data.print_time);
+        }
         window.location.href = "/result";
       }
     } else {

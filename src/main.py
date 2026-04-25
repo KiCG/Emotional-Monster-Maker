@@ -119,7 +119,7 @@ def generate_monster(joy, calm, anger, sadness, fear):
     tripo_url = "https://api.tripo3d.ai/v2/openapi/task"
     
     try:
-        req = requests.post(tripo_url, headers=headers, json=payload)
+        req = requests.post(tripo_url, headers=headers, json=payload, timeout=30)
         
         if req.status_code != 200:
             print(f"\n❌ Tripoからのエラー返答 ({req.status_code}):")
@@ -140,9 +140,13 @@ def generate_monster(joy, calm, anger, sadness, fear):
     # 3. 生成完了のポーリング
     print(f"Tripoで3D生成中... (Task ID: {task_id})")
     
-    while True:
+    max_poll_attempts = 60 # 5秒 × 60回 = 最大5分
+    poll_count = 0
+    
+    while poll_count < max_poll_attempts:
+        poll_count += 1
         try:
-            status_res = requests.get(f"{tripo_url}/{task_id}", headers=headers).json()
+            status_res = requests.get(f"{tripo_url}/{task_id}", headers=headers, timeout=30).json()
             status = status_res.get("data", {}).get("status")
             
             if status == "success":
@@ -189,7 +193,7 @@ def generate_monster(joy, calm, anger, sadness, fear):
                     try:
                         from src.print_manager import slice_stl, upload_to_octoprint
                         stl_path = os.path.splitext(saved_filepath)[0] + ".stl"
-                        gcode_path = slice_stl(stl_path)
+                        gcode_path, print_time = slice_stl(stl_path)
                         if gcode_path:
                             # 実際にOctoPrintが稼働していればここで印刷が開始されます
                             upload_to_octoprint(gcode_path, auto_print=True)
@@ -204,6 +208,7 @@ def generate_monster(joy, calm, anger, sadness, fear):
                         "success": True,
                         "glb_path": saved_filepath,
                         "blend_path": new_blend_path,
+                        "print_time": print_time,
                         "task_id": task_id,
                     }
                 except subprocess.CalledProcessError as e:
@@ -228,7 +233,9 @@ def generate_monster(joy, calm, anger, sadness, fear):
             print(f"ポーリングエラー: {e}")
             return {"success": False, "error": f"ポーリングエラー: {e}"}
 
-    return {"success": False, "error": "不明な理由で処理が中断されました。"}
+    # 最大回数に達してループを抜けた場合はタイムアウトとする
+    print("❌ Tripoの生成がタイムアウトしました。")
+    return {"success": False, "error": "Tripoでのモデル生成がタイムアウト（5分超過）しました。"}
 
 def download_and_save(url, filepath):
     # 保存先ディレクトリが存在しない場合は作成

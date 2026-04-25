@@ -59,13 +59,27 @@
   </main>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>
   <script>
-    // 例として、現在時刻から5分後を「孵化予定時刻」として表示するロジック
-    // ※用途に合わせて自由に調整してください
+    // PrusaSlicer形式 (例: "1h 13m 19s") を解析して分に変換する
+    const printTimeStr = sessionStorage.getItem("emm_print_time") || "0h 5m 0s";
+    
+    let totalMinutes = 0;
+    const hMatch = printTimeStr.match(/(\d+)h/);
+    const mMatch = printTimeStr.match(/(\d+)m/);
+    if (hMatch) totalMinutes += parseInt(hMatch[1]) * 60;
+    if (mMatch) totalMinutes += parseInt(mMatch[1]);
+    if (totalMinutes === 0) totalMinutes = 5; // デフォルト5分
+
+    // 実際の印刷にかかる時間（+5分の余裕を持たせる）
+    totalMinutes += 5;
+
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 5);
+    now.setMinutes(now.getMinutes() + totalMinutes);
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
     document.getElementById('hatchingTime').textContent = `${hh} : ${mm}`;
+    
+    // 使い終わったらクリア
+    sessionStorage.removeItem("emm_print_time");
   </script>
 </body>
 </html>

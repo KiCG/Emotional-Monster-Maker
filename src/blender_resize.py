@@ -1,7 +1,7 @@
 import bpy
 
 # 目標サイズ (メートル単位: 0.05 = 50mm)
-TARGET_SIZE = 0.05
+TARGET_SIZE = 0.025
 obj = bpy.context.active_object
 
 # 対象がメッシュ（ポリゴン）データの場合のみ処理する

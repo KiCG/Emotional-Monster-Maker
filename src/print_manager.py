@@ -14,7 +14,7 @@ def slice_stl(stl_path: str) -> str:
     """
     if not os.path.exists(stl_path):
         print(f"❌ エラー: STLファイルが見つかりません: {stl_path}")
-        return None
+        return None, None
 
     gcode_dir = os.path.dirname(stl_path)
     gcode_filename = os.path.basename(stl_path).replace('.stl', '.gcode')
@@ -36,11 +36,25 @@ def slice_stl(stl_path: str) -> str:
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         print(f"✅ スライス完了！出力先: {gcode_path}")
-        return gcode_path
+        
+        # 印刷時間を取得する
+        estimate = None
+        try:
+            with open(gcode_path, 'r') as f:
+                content = f.read()
+                import re
+                match = re.search(r'; estimated printing time \(normal mode\) = (.+)', content)
+                if match:
+                    estimate = match.group(1).strip()
+                    print(f"⏱️ 推定印刷時間: {estimate}")
+        except Exception as e:
+            print(f"⚠️ 印刷時間の取得に失敗しました: {e}")
+
+        return gcode_path, estimate
         
     except subprocess.CalledProcessError as e:
         print(f"❌ スライス処理エラー: {e.stderr}")
-        return None
+        return None, None
 
 
 def upload_to_octoprint(gcode_path: str, auto_print: bool = True):
