@@ -4,4 +4,5 @@ exported_models/*
 *blend1
 .DS_Store
 src/static/media/result-*.webm
+src/static/media/result-*.mp4
 Emotional-Monster-Maker_template_backup.blend
