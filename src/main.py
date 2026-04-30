@@ -63,6 +63,54 @@ def validate_emotion_values(joy, calm, anger, sadness, fear) -> Tuple[bool, Dict
 def emotion_to_filename_part(value: float) -> str:
     return f"{value:.2f}".replace(".", "p")
 
+# ==========================================
+# Blender処理と3Dプリントの共通関数
+# ==========================================
+def process_blender_and_print(glb_filepath, new_blend_path, task_id="fallback"):
+    print("\nBlenderでの自動処理（インポート＆リサイズ）を開始します...")
+    try:
+        cmd = [
+            "python", EXECUTE_PY_PATH,
+            BASE_BLEND_PATH,      # 絶対パス
+            new_blend_path,       # 絶対パス
+            glb_filepath,         # 絶対パス
+            BLENDER_SCRIPT_PATH   # 絶対パス
+        ]
+        subprocess.run(cmd, check=True)
+        
+        # ==========================================
+        # 3Dプリントの自動実行 (スライス & OctoPrint送信)
+        # ==========================================
+        print("\n🖨️ 3Dプリントの自動処理を開始します...")
+        print_time = None
+        try:
+            from src.print_manager import slice_stl, upload_to_octoprint
+            stl_path = os.path.splitext(glb_filepath)[0] + ".stl"
+            gcode_path, print_time = slice_stl(stl_path)
+            if gcode_path:
+                # 実際にOctoPrintが稼働していればここで印刷が開始されます
+                upload_to_octoprint(gcode_path, auto_print=True)
+            else:
+                print("⚠️ スライスに失敗したため、印刷はスキップされました。")
+        except Exception as e:
+            print(f"❌ 3Dプリント処理中にエラーが発生しました: {e}")
+
+        print(f"\n✨ すべてのパイプライン処理が完了しました！")
+        print(f"📂 出力されたBlenderファイル: {new_blend_path}")
+        return {
+            "success": True,
+            "glb_path": glb_filepath,
+            "blend_path": new_blend_path,
+            "print_time": print_time,
+            "task_id": task_id,
+        }
+    except subprocess.CalledProcessError as e:
+        print(f"\n❌ Blender処理中にエラーが発生しました: {e}")
+        return {"success": False, "error": f"Blender処理エラー: {e}"}
+    except FileNotFoundError:
+        print(f"\n❌ 実行ファイルが見つかりません。パスを確認してください: {EXECUTE_PY_PATH}")
+        return {"success": False, "error": f"実行ファイルが見つかりません: {EXECUTE_PY_PATH}"}
+
 
 def generate_monster(joy, calm, anger, sadness, fear):
     ok, normalized, error = validate_emotion_values(joy, calm, anger, sadness, fear)
@@ -140,7 +188,7 @@ def generate_monster(joy, calm, anger, sadness, fear):
     # 3. 生成完了のポーリング
     print(f"Tripoで3D生成中... (Task ID: {task_id})")
     
-    max_poll_attempts = 60 # 5秒 × 60回 = 最大5分
+    max_poll_attempts = 36 # 5秒 × 36回 = 最大3分
     poll_count = 0
     
     while poll_count < max_poll_attempts:
@@ -173,50 +221,8 @@ def generate_monster(joy, calm, anger, sadness, fear):
                 # 複製後のBlenderファイルの保存先を決定 (絶対パス)
                 new_blend_path = os.path.join(target_dir, blend_filename)
                 
-                # ==========================================
-                # execute.py の呼び出し
-                # ==========================================
-                print("\nBlenderでの自動処理（インポート＆リサイズ）を開始します...")
-                try:
-                    cmd = [
-                        "python", EXECUTE_PY_PATH,
-                        BASE_BLEND_PATH,      # 絶対パス
-                        new_blend_path,       # 絶対パス
-                        saved_filepath,       # 絶対パス
-                        BLENDER_SCRIPT_PATH   # 絶対パス
-                    ]
-                    subprocess.run(cmd, check=True)
-                    # ==========================================
-                    # 3Dプリントの自動実行 (スライス & OctoPrint送信)
-                    # ==========================================
-                    print("\n🖨️ 3Dプリントの自動処理を開始します...")
-                    try:
-                        from src.print_manager import slice_stl, upload_to_octoprint
-                        stl_path = os.path.splitext(saved_filepath)[0] + ".stl"
-                        gcode_path, print_time = slice_stl(stl_path)
-                        if gcode_path:
-                            # 実際にOctoPrintが稼働していればここで印刷が開始されます
-                            upload_to_octoprint(gcode_path, auto_print=True)
-                        else:
-                            print("⚠️ スライスに失敗したため、印刷はスキップされました。")
-                    except Exception as e:
-                        print(f"❌ 3Dプリント処理中にエラーが発生しました: {e}")
-
-                    print(f"\n✨ すべてのパイプライン処理が完了しました！")
-                    print(f"📂 出力されたBlenderファイル: {new_blend_path}")
-                    return {
-                        "success": True,
-                        "glb_path": saved_filepath,
-                        "blend_path": new_blend_path,
-                        "print_time": print_time,
-                        "task_id": task_id,
-                    }
-                except subprocess.CalledProcessError as e:
-                    print(f"\n❌ Blender処理中にエラーが発生しました: {e}")
-                    return {"success": False, "error": f"Blender処理エラー: {e}"}
-                except FileNotFoundError:
-                    print(f"\n❌ 実行ファイルが見つかりません。パスを確認してください: {EXECUTE_PY_PATH}")
-                    return {"success": False, "error": f"実行ファイルが見つかりません: {EXECUTE_PY_PATH}"}
+                # Blender＆印刷処理を呼び出し
+                return process_blender_and_print(saved_filepath, new_blend_path, task_id)
             
             elif status == "failed":
                 print("生成に失敗しました。")
@@ -233,9 +239,33 @@ def generate_monster(joy, calm, anger, sadness, fear):
             print(f"ポーリングエラー: {e}")
             return {"success": False, "error": f"ポーリングエラー: {e}"}
 
-    # 最大回数に達してループを抜けた場合はタイムアウトとする
-    print("❌ Tripoの生成がタイムアウトしました。")
-    return {"success": False, "error": "Tripoでのモデル生成がタイムアウト（5分超過）しました。"}
+    # ==========================================
+    # タイムアウト時の代替（フォールバック）処理
+    # ==========================================
+    print("\n⚠️ Tripoの生成がタイムアウトしました。")
+    print("🔄 代替モデルを使用してBlender処理を続行します...")
+    
+    fallback_base = "monster_J3p99_C1p00_A1p52_S2p52_Fe2p54"
+    fallback_glb_name = f"{fallback_base}.glb"
+    fallback_blend_name = f"{fallback_base}_fallback.blend"
+    
+    # EXPORT_DIR 内の対象フォルダにあると仮定
+    fallback_dir = os.path.join(EXPORT_DIR, fallback_base)
+    fallback_glb_path = os.path.join(fallback_dir, fallback_glb_name)
+    fallback_blend_path = os.path.join(fallback_dir, fallback_blend_name)
+    
+    # フォルダ内に見つからない場合は、EXPORT_DIR 直下を探す
+    if not os.path.exists(fallback_glb_path):
+        fallback_glb_path = os.path.join(EXPORT_DIR, fallback_glb_name)
+        fallback_blend_path = os.path.join(EXPORT_DIR, fallback_blend_name)
+        
+    # それでも見つからない場合はエラー
+    if not os.path.exists(fallback_glb_path):
+        return {"success": False, "error": f"タイムアウトしました。代替モデル ({fallback_glb_path}) も見つかりませんでした。"}
+    
+    # 代替モデルでBlender＆印刷処理を呼び出し
+    return process_blender_and_print(fallback_glb_path, fallback_blend_path, "timeout_fallback")
+
 
 def download_and_save(url, filepath):
     # 保存先ディレクトリが存在しない場合は作成

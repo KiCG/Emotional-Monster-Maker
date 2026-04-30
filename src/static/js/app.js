@@ -23,78 +23,10 @@ function appendLog(message) {
   result.textContent += `${prefix}[${now}] ${message}`;
 }
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  const toggle = document.getElementById("themeToggle");
-  if (toggle) {
-    toggle.textContent = theme === "dark" ? "ライトモード" : "ダークモード";
-  }
-}
-
-function initTheme() {
-  const saved = localStorage.getItem("emm_theme");
-  const theme = saved === "dark" ? "dark" : "light";
-  applyTheme(theme);
-
-  const toggle = document.getElementById("themeToggle");
-  if (!toggle) {
-    return;
-  }
-  toggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    const next = current === "dark" ? "light" : "dark";
-    localStorage.setItem("emm_theme", next);
-    applyTheme(next);
-  });
-}
-
-function bindSliderDisplay() {
-  document.querySelectorAll("input[type='range']").forEach((slider) => {
-    const key = slider.dataset.key;
-    const valueNode = document.getElementById(`${key}_v`);
-    const update = () => {
-      valueNode.textContent = Number(slider.value).toFixed(2);
-      const min = Number(slider.min);
-      const max = Number(slider.max);
-      const val = Number(slider.value);
-      const percent = ((val - min) / (max - min)) * 100;
-      slider.style.setProperty("--fill-percent", `${percent}%`);
-    };
-    slider.addEventListener("input", update);
-    update();
-  });
-}
-
 async function submitForm() {
   sessionStorage.setItem("emm_generate_mode", "generate");
   sessionStorage.setItem("emm_generate_payload", JSON.stringify(getPayload()));
   window.location.href = "/loading";
-}
-
-function startLoadingTest() {
-  sessionStorage.setItem("emm_generate_mode", "test");
-  sessionStorage.setItem("emm_generate_payload", JSON.stringify(getPayload()));
-  window.location.href = "/loading";
-}
-
-async function testInput() {
-  const testButton = document.getElementById("testButton");
-  testButton.disabled = true;
-  setResult("入力値をバックエンドへ送信して確認中...");
-
-  try {
-    const res = await fetch("/test-input", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(getPayload()),
-    });
-    const data = await res.json();
-    setResult(`接続テスト結果\n${JSON.stringify(data, null, 2)}`);
-  } catch (error) {
-    setResult(`通信エラー\n${error}`);
-  } finally {
-    testButton.disabled = false;
-  }
 }
 
 async function runGenerateFromSession() {
@@ -141,10 +73,10 @@ async function runGenerateFromSession() {
       if (mode === "test") {
         appendLog("接続テスト成功");
         appendLog(JSON.stringify(data, null, 2));
-        appendLog("2秒後に結果画面へ遷移します（テスト用）...");
+        appendLog("10秒後に結果画面へ遷移します（テスト用）...");
         setTimeout(() => {
           window.location.href = "/result";
-        }, 2000);
+        }, 10000);
       } else {
         appendLog("生成成功");
         appendLog(`GLB: ${data.glb_path}`);
@@ -168,15 +100,37 @@ async function runGenerateFromSession() {
 
 function initIndexPage() {
   const runButton = document.getElementById("runButton");
-  const testButton = document.getElementById("testButton");
   const loadingTestButton = document.getElementById("loadingTestButton");
-  if (!runButton || !testButton || !loadingTestButton) {
-    return;
+  const emotionForm = document.getElementById("emotionForm");
+
+  if (runButton) {
+    runButton.addEventListener("click", () => submitForm());
   }
-  runButton.addEventListener("click", submitForm);
-  testButton.addEventListener("click", testInput);
-  loadingTestButton.addEventListener("click", startLoadingTest);
-  bindSliderDisplay();
+
+  if (loadingTestButton) {
+    loadingTestButton.addEventListener("click", () => {
+      sessionStorage.setItem("emm_generate_mode", "test");
+      sessionStorage.setItem("emm_generate_payload", JSON.stringify(getPayload()));
+      window.location.href = "/loading";
+    });
+  }
+
+  if (emotionForm) {
+    // スライダーの値表示の更新
+    const sliders = emotionForm.querySelectorAll('input[type="range"]');
+    sliders.forEach((slider) => {
+      const updateValue = () => {
+        const valSpan = document.getElementById(`${slider.id}_v`);
+        if (valSpan) valSpan.textContent = parseFloat(slider.value).toFixed(2);
+        
+        // プログレスバー風の色付け
+        const percent = ((slider.value - slider.min) / (slider.max - slider.min)) * 100;
+        slider.style.setProperty("--fill-percent", `${percent}%`);
+      };
+      slider.addEventListener("input", updateValue);
+      updateValue(); // 初期表示
+    });
+  }
 }
 
 function initLoadingPage() {
@@ -227,6 +181,5 @@ function initLoadingPage() {
   runGenerateFromSession();
 }
 
-initTheme();
 initIndexPage();
 initLoadingPage();

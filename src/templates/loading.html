@@ -7,6 +7,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
+  <div class="decoration side-left">
+    <img src="{{ url_for('static', filename='media/deco1.png') }}" alt="">
+    <img src="{{ url_for('static', filename='media/deco2.png') }}" alt="">
+  </div>
+  <div class="decoration side-right">
+    <img src="{{ url_for('static', filename='media/deco3.png') }}" alt="">
+    <img src="{{ url_for('static', filename='media/deco4.png') }}" alt="">
+  </div>
   <main class="page">
     <section class="panel loading-panel">
       <div class="spinner" aria-hidden="true"></div>
@@ -18,7 +26,6 @@
           ご利用のブラウザは動画再生に対応していません。
         </video>
       </div>
-      <pre id="result">処理を開始します...</pre>
       <div class="button-row">
         <button id="backButton" class="secondary" type="button">入力画面に戻る</button>
       </div>

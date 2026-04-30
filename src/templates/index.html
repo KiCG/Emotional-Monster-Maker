@@ -7,19 +7,23 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
+  <div class="decoration side-left">
+    <img src="{{ url_for('static', filename='media/deco1.png') }}" alt="">
+    <img src="{{ url_for('static', filename='media/deco2.png') }}" alt="">
+  </div>
+  <div class="decoration side-right">
+    <img src="{{ url_for('static', filename='media/deco3.png') }}" alt="">
+    <img src="{{ url_for('static', filename='media/deco4.png') }}" alt="">
+  </div>
   <main class="page">
     <section class="panel">
-      <header class="panel-header">
-        <div class="title-row">
-          <h1>Emotional Monster Maker</h1>
-          <button id="themeToggle" class="theme-toggle" type="button" aria-label="テーマ切り替え">
-            ダークモード
-          </button>
-        </div>
-        <p>iPadから感情パラメータを送信して、MacBook側で3D生成を実行します。</p>
+      <header class="panel-header centered">
+        <h1>Emotional Monster Maker</h1>
+        <p>感情パラメータを入力して、君だけの感情モンスターを作ろう！</p>
       </header>
 
       <form id="emotionForm" class="slider-grid" onsubmit="return false;">
+        <!-- ... スライダー部分はそのまま ... -->
         <label class="slider-row" for="joy">
           <span class="name">Joy (喜び)</span>
           <span class="value-pill" id="joy_v">3.00</span>
@@ -51,16 +55,10 @@
         </label>
       </form>
 
-      <div class="button-row">
-        <button id="loadingTestButton" class="secondary" type="button">孵化画面テスト（生成なし）</button>
-        <button id="testButton" class="secondary" type="button">接続テスト（生成なし）</button>
-        <button id="runButton" type="button">生成を開始</button>
+      <div class="button-row main-actions">
+        <button id="loadingTestButton" class="secondary large" type="button">デモ表示（生成なし）</button>
+        <button id="runButton" class="large" type="button">生成を開始</button>
       </div>
-
-      <section class="result-box">
-        <h2>結果</h2>
-        <pre id="result">待機中...</pre>
-      </section>
     </section>
   </main>
   <script src="{{ url_for('static', filename='js/app.js') }}"></script>

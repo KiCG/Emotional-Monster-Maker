@@ -1,23 +1,4 @@
 :root {
-  --bg: #f3f6fb;
-  --bg-accent: #e5edff;
-  --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --primary: #2f6dfd;
-  --primary-pressed: #2457cb;
-  --secondary: #4b5563;
-  --border: #dbe3ee;
-  --slider-bg: #fafcff;
-  --pill-bg: #e4ecff;
-  --pill-text: #1c4cd6;
-  --code-bg: #0f172a;
-  --code-text: #e2e8f0;
-  --theme-button-bg: #111827;
-  --theme-button-text: #f9fafb;
-}
-
-[data-theme="dark"] {
   --bg: #070b14;
   --bg-accent: #131c2f;
   --panel: #0f172a;
@@ -63,20 +44,23 @@ body {
   padding: 20px;
 }
 
-.panel-header h1 {
-  margin: 0;
-  font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+.panel-header.centered {
+  text-align: center;
+  margin-bottom: 30px;
 }
 
-.title-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
+.panel-header h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--primary), #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .panel-header p {
-  margin-top: 8px;
+  margin-top: 12px;
+  font-size: 1.1rem;
   color: var(--muted);
 }
 
@@ -184,6 +168,22 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.button-row.main-actions {
+  margin-top: 30px;
+  gap: 15px;
+}
+
+button.large {
+  padding: 16px 24px;
+  font-size: 1.1rem;
+  transition: transform 0.2s;
+}
+
+button.large:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(47, 109, 253, 0.3);
+}
+
 .theme-toggle {
   width: auto;
   margin: 0;
@@ -261,5 +261,39 @@ pre {
 @media (min-width: 760px) {
   .button-row {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+
+.decoration {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 80px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.side-left {
+  left: 0.5vw;
+}
+
+.side-right {
+  right: 0.5vw;
+}
+
+.decoration img {
+  width: min(450px, 25vw);
+  height: auto;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 40px var(--primary)) brightness(1.1);
+  transition: opacity 0.5s;
+}
+
+/* モバイルでは非表示（MacBook前提） */
+@media (max-width: 1100px) {
+  .decoration {
+    display: none;
   }
 }
