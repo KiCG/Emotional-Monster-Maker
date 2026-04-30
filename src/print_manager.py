@@ -1,10 +1,18 @@
 import os
+import sys
 import subprocess
 import requests
 
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SRC_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
+
+import config
+
 CREALITY_PRINT_CLI = "/Applications/Creality Print.app/Contents/MacOS/CrealityPrint"
-OCTOPRINT_URL = "http://localhost:5001" # 環境に合わせて変更してください
-OCTOPRINT_API_KEY = "w_31UZFV3L1TUveWo3CrLQM167laqdB4hCh4Yt8Uyfg" # 実際のAPIキーに変更してください
+OCTOPRINT_URL = config.OCTOPRINT_URL
+OCTOPRINT_API_KEY = config.OCTOPRINT_API_KEY
 
 PRUSA_SLICER_CLI = "/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
 
