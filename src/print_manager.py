@@ -10,11 +10,11 @@ if PROJECT_ROOT not in sys.path:
 
 import config
 
-CREALITY_PRINT_CLI = "/Applications/Creality Print.app/Contents/MacOS/CrealityPrint"
+CREALITY_PRINT_CLI = config.CREALITY_PRINT_CLI
 OCTOPRINT_URL = config.OCTOPRINT_URL
 OCTOPRINT_API_KEY = config.OCTOPRINT_API_KEY
 
-PRUSA_SLICER_CLI = "/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/MacOS/PrusaSlicer"
+PRUSA_SLICER_CLI = config.PRUSA_SLICER_CLI
 
 def slice_stl(stl_path: str) -> str:
     """

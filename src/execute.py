@@ -1,6 +1,14 @@
 import sys
 import shutil
 import subprocess
+import os
+
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(SRC_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.append(PROJECT_ROOT)
+
+import config
 
 # 引数が正しく渡されているかチェック (スクリプト名 + 4つの引数 = 合計5つ)
 if len(sys.argv) < 5:
@@ -25,7 +33,7 @@ except FileNotFoundError:
 
 # 2. 複製したファイルを開き、Blender内スクリプトを実行
 cmd = [
-    "/Applications/Blender 3.app/Contents/MacOS/Blender",
+    config.BLENDER_CLI,
     "--factory-startup",  # 1. まずまっさらな初期状態にする
     "--background",       # 2. 画面なしモードにする
     new_blend_path,       # 3. その上で、対象のBlenderファイルを開く（重要！）

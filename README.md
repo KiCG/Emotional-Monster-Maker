@@ -44,7 +44,17 @@ cd Emotional-Monster-Maker
 pip install -r requirements.txt
 ```
 
-### 3. 設定ファイルの準備
+### 3. OctoPrintのインストール（まだ環境がない場合）
+ローカルPC経由で3Dプリンタを制御するため、OctoPrintをインストールします（仮想環境での構築を推奨します）。
+```bash
+cd ~
+python3 -m venv OctoPrint
+source OctoPrint/bin/activate
+pip install pip --upgrade
+pip install octoprint
+```
+
+### 4. 設定ファイルの準備
 リポジトリに含まれる `config_example.py` をコピーして `config.py` を作成し、ご自身の各種APIキーやURLを設定してください。
 ```bash
 cp config_example.py config.py
@@ -58,6 +68,21 @@ OCTOPRINT_API_KEY = "ここにOctoPrintのAPIキー"
 ```
 
 ## 🎮 使い方
+
+### 0. 事前準備 (OctoPrintの起動とスリープ対策)
+
+1. **OctoPrintサーバーの起動**
+ターミナルから以下のコマンドを実行して、OctoPrintサーバーを立ち上げます。
+```bash
+/Users/<username>/OctoPrint/bin/octoprint serve --port 5001
+```
+*(※環境に合わせてOctoPrintの実行パスは変更してください)*
+
+2. **PCのスリープ無効化（重要）**
+3Dプリント中にPC（MacBook等）がスリープ状態になると、プリンターへの通信が途絶え、印刷が途中で停止してしまいます。印刷中は必ずPCがスリープしないように設定してください。
+> **💡 TIP (MacBookユーザー向け)**: 
+> 画面を閉じてもスリープを防止してくれる無料アプリ **[Amphetamine](https://apps.apple.com/jp/app/amphetamine/id937984704?mt=12)** の利用を強く推奨します。
+
 
 ### Web UI経由で実行する（推奨）
 MacBook側でWebサーバーを起動し、iPadやスマートフォンのブラウザからアクセスして操作できます。
